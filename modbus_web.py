@@ -100,6 +100,7 @@ def ejecutar_cli(argv):
 
 
 class Manejador(BaseHTTPRequestHandler):
+
     def do_GET(self):
         self.responder(PAGINA, 'text/html')
 
@@ -108,7 +109,7 @@ class Manejador(BaseHTTPRequestHandler):
             self.responder('', 'text/plain')
             # shutdown() espera a que acabe serve_forever(), así que se llama desde otro hilo
             threading.Thread(target=self.server.shutdown).start()
-        else:
+        else: 
             argv = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
             self.responder(ejecutar_cli(argv), 'text/plain')
 

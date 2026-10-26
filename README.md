@@ -1,4 +1,4 @@
-# Cliente Modbus TCP escrito a mano
+# Cliente Modbus TCP
 
 ## Qué hace
 
