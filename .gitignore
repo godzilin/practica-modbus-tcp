@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pdf
+# El ejecutable se sube como descarga en Releases, no al repositorio
+cliente_modbus
