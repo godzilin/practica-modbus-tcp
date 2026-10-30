@@ -126,14 +126,50 @@ Para usar el cliente sin escribir órdenes:
 
 1. Arranca el simulador (`./simulador_modbus`).
 2. Descarga `cliente_modbus` de la página de [Releases](../../releases/latest) y ábrelo con doble clic (o con `chmod +x cliente_modbus && ./cliente_modbus` desde la terminal).
-3. Se abre el navegador con un formulario. Elige la función, rellena los campos y pulsa **Enviar**.
-4. Al terminar, pulsa **Salir**.
+3. Se abre el navegador con un formulario. Rellénalo y pulsa **Enviar**. El resultado aparece debajo, en **Resultado**.
+4. Al terminar, pulsa **Salir**. Si cierras solo la pestaña, el programa sigue abierto.
 
 `cliente_modbus` es un único ejecutable para Linux x86-64 que lleva Python dentro, igual que el simulador, así que no hay que instalar nada. Se compiló sobre Debian 11 (glibc 2.31) y funciona en Ubuntu 20.04 o posterior. Si hay Python, también se puede abrir con `python3 modbus_web.py`.
 
-`modbus_web.py` no repite lógica. Convierte el formulario en los argumentos de `modbus_cli.py`, lo ejecuta y enseña lo que escribiría en la consola, así que la salida y los errores son los mismos que en el CLI. El servidor solo escucha en `127.0.0.1`, en un puerto libre que elige el sistema.
+### El formulario
 
-Para volver a compilar el ejecutable (hace falta podman o docker):
+| Campo | Qué poner | Por defecto |
+|---|---|---|
+| IP | Dirección del servidor | `127.0.0.1` |
+| Puerto | Puerto del servidor | `5020` |
+| Unidad | Unit ID | `1` |
+| Función | La función Modbus. Entre paréntesis dice qué números hay que poner en **Datos** | 0x03 |
+| Datos | Los números que pide la función, separados por espacios | vacío |
+| Ver tramas | Muestra las tramas `TX:` y `RX:`, igual que `--traza` | desmarcado |
+
+Ejemplos de **Datos**:
+
+| Función | Datos | Qué hace |
+|---|---|---|
+| 0x03 Leer holding registers | `107 3` | Lee 3 registros a partir del 107 |
+| 0x01 Leer coils | `0 8` | Lee 8 coils a partir del 0 |
+| 0x05 Escribir un coil | `5 1` | Pone el coil 5 a ON |
+| 0x06 Escribir un registro | `10 1234` | Escribe 1234 en el registro 10 |
+| 0x10 Escribir varios registros | `20 1 2 3` | Escribe 1, 2 y 3 en los registros 20, 21 y 22 |
+| 0x17 Leer y escribir registros | `0 2 20 7 8` | Escribe 7 y 8 en los registros 20 y 21, y lee 2 registros a partir del 0 |
+
+El **Resultado** es exactamente lo que escribiría `modbus_cli.py` en la consola: los datos leídos, `OK` en una escritura o el mensaje de error (por ejemplo `ARGUMENTO INVALIDO: …` si faltan datos). El formulario conserva lo que escribiste, así que puedes cambiar un número y volver a enviar.
+
+### Cómo funciona por dentro
+
+`modbus_web.py` no repite lógica: no sabe nada de Modbus.
+
+1. Al abrirse, arranca un servidor web en `127.0.0.1` (solo se puede usar desde el mismo PC), en un puerto libre que elige el sistema, y abre el navegador.
+2. La página es un formulario HTML normal, sin JavaScript. Al pulsar **Enviar**, el navegador manda los campos al servidor.
+3. El servidor convierte los campos en los argumentos de `modbus_cli.py`. Por ejemplo, Función 0x03 y Datos `107 3` pasan a ser `--ip 127.0.0.1 --puerto 5020 --unidad 1 leer-holding 107 3`.
+4. Ejecuta `modbus_cli.main()` con esos argumentos, recoge lo que escribe en la consola y lo devuelve en la página, debajo del formulario.
+5. **Salir** apaga el servidor.
+
+El timeout no se puede cambiar desde el formulario. Se usa el del CLI, 5 segundos.
+
+### Volver a compilar el ejecutable
+
+Hace falta podman o docker. Antes, cierra con **Salir** cualquier `cliente_modbus` abierto: si está en marcha, el fichero no se puede sobrescribir (`Text file busy`).
 
 ```
 podman run --rm -v "$PWD":/src:Z -w /tmp docker.io/library/python:3.10-slim-bullseye sh -c \

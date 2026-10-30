@@ -377,6 +377,7 @@ class ClienteModbusTCP:
     def __exit__(self, *exc):
         self.cerrar()
 
+    #este metodo traza las tramas enviadas y recibidas en hex
     def _trazar(self, sentido, trama):
         if self.traza:
             print(f'{sentido}: {trama.hex(" ").upper()}')
@@ -403,6 +404,9 @@ class ClienteModbusTCP:
         if not self.socket:
             raise ErrorConexion('Cliente no conectado')
 
+        #transaction id es un número que el cliente pone en la petición y el servidor copia en la respuesta. 
+        #Sirve para identificar la respuesta de nuestra petición si hay varias en vuelo (p. ej. con hilos). 
+        #Aquí se incrementa en cada petición y se queda en 16 bits (0..65535) para que no crezca sin límite.
         self.transaction_id = (self.transaction_id + 1) & 0xFFFF
         pdu = funcion.pdu()
         cabecera = CabeceraMBAP(self.transaction_id, 0, 1 + len(pdu), self.unidad)
